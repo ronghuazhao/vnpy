@@ -139,6 +139,13 @@ class MainEngine(object):
             self.gatewayDict['OANDA'].setQryEnabled(True)
         except Exception, e:
             print e
+
+        try:
+            from okcoincnGateway.okcoincnGateway import OkcoincnGateway
+            self.addGateway(OkcoincnGateway, 'OKCOINCN')
+            self.gatewayDict['OKCOINCN'].setQryEnabled(True)
+        except Exception, e:
+            print e  
         
         try:
             from okcoinGateway.okcoinGateway import OkcoinGateway

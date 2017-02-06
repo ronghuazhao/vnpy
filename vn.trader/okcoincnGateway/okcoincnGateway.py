@@ -28,14 +28,6 @@ priceTypeMap['sell'] = (DIRECTION_SHORT, PRICETYPE_LIMITPRICE)
 priceTypeMap['sell_market'] = (DIRECTION_SHORT, PRICETYPE_MARKETPRICE)
 priceTypeMapReverse = {v: k for k, v in priceTypeMap.items()} 
 
-offsetMap = {}
-offsetMap[1] = (OFFSET_OPEN, DIRECTION_LONG)
-offsetMap[2] = (OFFSET_OPEN, DIRECTION_SHORT)
-offsetMap[3] = (OFFSET_CLOSE, DIRECTION_LONG)
-offsetMap[4] = (OFFSET_CLOSE, DIRECTION_SHORT)
-offsetMapReverse = {v: k for k, v in offsetMap.items()} 
-
- 
 # 方向类型映射
 directionMap = {}
 directionMapReverse = {v: k for k, v in directionMap.items()}
@@ -51,8 +43,6 @@ statusMap[4] = STATUS_UNKNOWN
 ############################################
 ## 交易合约代码
 ############################################
-
-BTC = 'BTC'
 
 # USD
 BTC_USD_SPOT = 'BTC_USD_SPOT'
@@ -77,16 +67,6 @@ spotSymbolMap['ltc_cny'] = LTC_CNY_SPOT
 spotSymbolMap['btc_cny'] = BTC_CNY_SPOT
 spotSymbolMapReverse = {v: k for k, v in spotSymbolMap.items()}
 
-futureSymbolMap = {}
-futureSymbolMap['btc_'] = BTC
-futureSymbolMapReverse = {v: k for k, v in futureSymbolMap.items()}
-
-futureContractMap = {}
-futureContractMap['this_week'] = BTC_USD_THISWEEK
-futureContractMap['next_week'] = BTC_USD_NEXTWEEK
-futureContractMap['quarter'] = BTC_USD_QUARTER
-futureContractMapReverse = {v: k for k, v in futureContractMap.items()}
-
 
 ############################################
 ## Channel和Symbol的印射
@@ -100,14 +80,6 @@ channelSymbolMap['ok_sub_spotusd_ltc_ticker'] = LTC_USD_SPOT
 channelSymbolMap['ok_sub_spotusd_btc_depth_20'] = BTC_USD_SPOT
 channelSymbolMap['ok_sub_spotusd_ltc_depth_20'] = LTC_USD_SPOT
 
-channelSymbolMap['ok_sub_futureusd_btc_ticker_this_week'] = BTC_USD_THISWEEK
-channelSymbolMap['ok_sub_futureusd_btc_ticker_next_week'] = BTC_USD_NEXTWEEK
-channelSymbolMap['ok_sub_futureusd_btc_ticker_quarter'] = BTC_USD_QUARTER
-
-channelSymbolMap['ok_sub_futureusd_btc_depth_this_week_20'] = BTC_USD_THISWEEK
-channelSymbolMap['ok_sub_futureusd_btc_depth_next_week_20'] = BTC_USD_NEXTWEEK
-channelSymbolMap['ok_sub_futureusd_btc_depth_quarter_20'] = BTC_USD_QUARTER
-
 # CNY
 channelSymbolMap['ok_sub_spotcny_btc_ticker'] = BTC_CNY_SPOT
 channelSymbolMap['ok_sub_spotcny_ltc_ticker'] = LTC_CNY_SPOT
@@ -119,13 +91,13 @@ channelSymbolMap['ok_sub_spotcny_ltc_depth_20'] = LTC_CNY_SPOT
 
 
 ########################################################################
-class OkcoinGateway(VtGateway):
+class OkcoincnGateway(VtGateway):
     """OkCoin接口"""
 
     #----------------------------------------------------------------------
-    def __init__(self, eventEngine, gatewayName='OKCOIN'):
+    def __init__(self, eventEngine, gatewayName='OKCOINCN'):
         """Constructor"""
-        super(OkcoinGateway, self).__init__(eventEngine, gatewayName)
+        super(OkcoincnGateway, self).__init__(eventEngine, gatewayName)
         
         self.api = Api(self)     
         
@@ -192,26 +164,16 @@ class OkcoinGateway(VtGateway):
     #----------------------------------------------------------------------
     def sendOrder(self, orderReq):
         """发单"""
-        contract_type = offsetMapReverse[(orderReq.offset, orderReq.direction)]
-        if contract_type in [1, 2, 3, 4]:
-            return self.api.futureSendOrder(orderReq)
-        else:
-            return self.api.spotSendOrder(orderReq)
+        return self.api.spotSendOrder(orderReq)
         
     #----------------------------------------------------------------------
     def cancelOrder(self, cancelOrderReq):
         """撤单"""
-        symbol = cancelOrderReq.symbol
-        offset = cancelOrderReq.offset
-        if offset in [OFFSET_CLOSE, OFFSET_OPEN]:
-            return self.api.futureCancel(cancelOrderReq)
-        else:
-            return self.api.spotCancel(cancelOrderReq)
+        self.api.spotCancel(cancelOrderReq)
         
     #----------------------------------------------------------------------
     def qryAccount(self):
         """查询账户资金"""
-        self.api.futureUserInfo()
         self.api.spotUserInfo()
         
     #----------------------------------------------------------------------
@@ -357,8 +319,6 @@ class Api(vnokcoin.OkCoinApi):
         
         # 如果连接的是USD网站则订阅期货相关回报数据
         if self.currency == vnokcoin.CURRENCY_USD:
-            self.futureUserInfo()
-
             self.subscribeFutureTrades()
             self.subscribeFutureUserInfo()
             self.subscribeFuturePositions()
@@ -429,17 +389,9 @@ class Api(vnokcoin.OkCoinApi):
         self.cbDict['ok_sub_futureusd_btc_ticker_next_week'] = self.onTicker
         self.cbDict['ok_sub_futureusd_btc_ticker_quarter'] = self.onTicker
 
-        self.cbDict['ok_sub_futureusd_btc_depth_this_week_20'] = self.onDepth
-        self.cbDict['ok_sub_futureusd_btc_depth_next_week_20'] = self.onDepth
-        self.cbDict['ok_sub_futureusd_btc_depth_quarter_20'] = self.onDepth
-
-        self.cbDict['ok_futureusd_userinfo'] = self.onFutureUserInfo
-        self.cbDict['ok_futureusd_orderinfo'] = self.onFutureOrderInfo
-
-        self.cbDict['ok_sub_futureusd_trades'] = self.onFutureSubTrades
-
-        self.cbDict['ok_futureusd_trade'] = self.onFutureTrade
-        self.cbDict['ok_futureusd_cancel_order'] = self.onFutureCancelOrder
+        self.cbDict['ok_sub_futureusd_btc_depth_20_this_week_20'] = self.onDepth
+        self.cbDict['ok_sub_futureusd_btc_depth_20_next_week_20'] = self.onDepth
+        self.cbDict['ok_sub_futureusd_btc_depth_20_quarter_20'] = self.onDepth
         
     #----------------------------------------------------------------------
     def onTicker(self, data):
@@ -700,14 +652,12 @@ class Api(vnokcoin.OkCoinApi):
         
         # 期货
         contract.productClass = PRODUCT_FUTURES
-        contract.contract_type = "this_week"
+        
         contractList.append(self.generateSpecificContract(contract, BTC_USD_THISWEEK))
-        contractList.append(self.generateSpecificContract(contract, LTC_USD_THISWEEK))
-        contract.contract_type = "next_week"
         contractList.append(self.generateSpecificContract(contract, BTC_USD_NEXTWEEK))
-        contractList.append(self.generateSpecificContract(contract, LTC_USD_NEXTWEEK))
-        contract.contract_type = "quarter"
         contractList.append(self.generateSpecificContract(contract, BTC_USD_QUARTER))
+        contractList.append(self.generateSpecificContract(contract, LTC_USD_THISWEEK))
+        contractList.append(self.generateSpecificContract(contract, LTC_USD_NEXTWEEK))
         contractList.append(self.generateSpecificContract(contract, LTC_USD_QUARTER))
         
         return contractList        
@@ -764,263 +714,6 @@ class Api(vnokcoin.OkCoinApi):
             # 如果在系统委托号返回前客户就发送了撤单请求，则保存
             # 在cancelDict字典中，等待返回后执行撤单任务
             self.cancelDict[localNo] = req
-
-    #-----------------------------------------------------------------------
-    def onFutureUserInfo(self, data):
-        rawData = data['data']
-        info = rawData['info']
-
-        for symbol in ['btc', 'ltc', self.currency]:
-            future = info[symbol]
-            if future['account_rights'] > 0:
-                pos = VtPositionData()
-                pos.gatewayName = self.gatewayName
-
-                pos.symbol = symbol
-                pos.vtSymbol = symbol
-                pos.vtPositionName = symbol
-                pos.direction = DIRECTION_NET
-                pos.position = float(future['account_rights'])
-
-                self.gateway.onPosition(pos)
-
-            if future["rights"] > 0:
-                pos = VtPositionData()
-                pos.gatewayName = self.gatewayName
-
-                pos.symbol = symbol
-                pos.vtSymbol = symbol
-                pos.vtPositionName = symbol
-                pos.direction = DIRECTION_NET
-                pos.position = float(future['rights'])
-
-                self.gateway.onPosition(pos)
-
-        account = VtAccountData()
-        account.gatewayName = self.gatewayName
-        account.accountID = self.gatewayName
-        account.vtAccountID = account.accountID
-        account.balance = pos.position
-        self.gateway.onAccount(account)
-
-    #-----------------------------------------------------------------------
-    def onFutureOrderInfo():
-        """委托信息查询回调"""
-        rawData = data['data']
-        print("on future order info")
-        
-        for d in rawData['orders']:
-            self.localNo += 1
-            localNo = str(self.localNo)
-            orderId = str(d['order_id'])
-            
-            self.localNoDict[localNo] = orderId
-            self.orderIdDict[orderId] = localNo
-            print(d['symbol'])
-            if d['symbol'] == "btc_usd":
-                SymbolList = ["BTC_USD_THISWEEK", "BTC_USD_NEXTWEEK", "BTC_USD_QUARTER"]
-
-                for futuresymbol in SymbolList:
-                    if orderId not in self.orderDict:
-                        order = VtOrderData()
-                        order.gatewayName = self.gatewayName
-                        order.symbol = futuresymbol
-                        order.vtSymbol = order.symbol
-    
-                        order.orderID = localNo
-                        order.vtOrderID = '.'.join([self.gatewayName, order.orderID])
-                        
-                        order.price = d['price']
-                        order.totalVolume = d['amount']
-                        if d['type'] == "1":
-                            order.offset = OFFSET_OPEN
-                            order.direction = DIRECTION_LONG
-                        if d['type'] == "2":
-                            order.offset = OFFSET_OPEN
-                            order.direction = DIRECTION_SHORT
-                        if d['type'] == "3":
-                            order.offset = OFFSET_CLOSE
-                            order.direction = DIRECTION_LONG
-                        if d['type'] == "4":
-                            order.offset = OFFSET_CLOSE
-                            order.direction = DIRECTION_SHORT
-                        
-                        self.orderDict[orderId] = order
-                    else:
-                        order = self.orderDict[orderId]
-                        
-                    order.tradedVolume = d['deal_amount']
-                    order.status = statusMap[d['status']]            
-                    
-                    self.gateway.onOrder(copy(order))
-    #def onFutureSubUserInfo():
-   
-    def onFutureSubTrades(self, data):
-        """成交和委托推送"""
-        if 'data' not in data:
-            return
-        rawData = data['data']
-        
-        # 本地和系统委托号
-        orderId = str(rawData['orderid'])
-        localNo = self.orderIdDict[orderId]
-        contractname = str(rawData['contract_name'])
-
-
-        # 委托信息
-        if orderId not in self.orderDict:
-            order = VtOrderData()
-            order.gatewayName = self.gatewayName
-
-            order.contract_type = rawData['contract_type']
-            if order.contract_type == "this_week":
-                if contractname[:3] == "BTC":
-                    order.symbol = "BTC_USD_THISWEEK"
-            if order.contract_type == "next_week":
-                if contractname[:3] == "BTC":
-                    order.symbol = "BTC_USD_NEXTWEEK"
-            if order.contract_type == "quarter":
-                if contractname[:3] == "BTC":
-                    order.symbol = "BTC_USD_QUARTER"
-            order.vtSymbol = order.symbol
-
-            order.orderID = localNo
-            order.vtOrderID = '.'.join([self.gatewayName, order.orderID])
-            order.price = float(rawData['price'])
-            order.totalVolume = float(rawData['amount'])
-            if rawData['type'] == "1":
-                order.offset = OFFSET_OPEN
-                order.direction = DIRECTION_LONG
-            if rawData['type'] == "2":
-                order.offset = OFFSET_OPEN
-                order.direction = DIRECTION_SHORT
-            if rawData['type'] == "3":
-                order.offset = OFFSET_CLOSE
-                order.direction = DIRECTION_LONG
-            if rawData['type'] == "4":
-                order.offset = OFFSET_CLOSE
-                order.direction = DIRECTION_SHORT
-            
-            self.orderDict[orderId] = order
-        else:
-            order = self.orderDict[orderId]
-            
-        order.tradedVolume = float(rawData['deal_amount'])
-        if rawData['status'] == "0":
-            order.status = STATUS_NOTTRADED
-        if rawData['status'] == "1":
-            order.status = STATUS_PARTTRADED
-        if rawData['status'] == "2":
-            order.status = STATUS_ALLTRADED
-        if rawData['status'] == "-1":
-            order.status = STATUS_CANCELLED
-        if rawData['status'] == "4":
-            order.status = STATUS_UNKNOWN
-        
-        self.gateway.onOrder(copy(order))
-        
-        # 成交信息
-        if 'deal_amount' in rawData and float(rawData['deal_amount'])>0:
-            trade = VtTradeData()
-            trade.gatewayName = self.gatewayName
-            
-            trade.symbol = rawData['contract_id']
-            trade.vtSymbol = order.symbol            
-            
-            trade.tradeID = str(rawData['orderid'])
-            trade.vtTradeID = '.'.join([self.gatewayName, trade.tradeID])
-            
-            trade.orderID = localNo
-            trade.vtOrderID = '.'.join([self.gatewayName, trade.orderID])
-            
-            trade.price = float(rawData['price_avg'])
-            trade.volume = float(rawData['deal_amount'])
-            
-            if rawData['type'] == "1":
-                trade.offset = OFFSET_OPEN
-                trade.direction = DIRECTION_LONG
-            if rawData['type'] == "2":
-                trade.offset = OFFSET_OPEN
-                trade.direction = DIRECTION_SHORT
-            if rawData['type'] == "3":
-                trade.offset = OFFSET_CLOSE
-                trade.direction = DIRECTION_LONG
-            if rawData['type'] == "4":
-                trade.offset = OFFSET_CLOSE
-                trade.direction = DIRECTION_SHORT  
-            
-            trade.tradeTime = datetime.now().strftime('%H:%M:%S')
-            
-            self.gateway.onTrade(trade)
-    
-
-    #----------------------------------------------------------------------
-    def onFutureTrade(self, data):
-        """委托回报"""
-        rawData = data['data']
-        orderId = rawData['order_id']
-        
-        # 尽管websocket接口的委托号返回是异步的，但经过测试是
-        # 符合先发现回的规律，因此这里通过queue获取之前发送的
-        # 本地委托号，并把它和推送的系统委托号进行映射
-        localNo = self.localNoQueue.get_nowait()
-        
-        self.localNoDict[localNo] = orderId
-        self.orderIdDict[orderId] = localNo
-        
-        # 检查是否有系统委托号返回前就发出的撤单请求，若有则进
-        # 行撤单操作
-        if localNo in self.cancelDict:
-            req = self.cancelDict[localNo]
-            self.futureCancel(req)
-            del self.cancelDict[localNo]
-    #----------------------------------------------------------------------
-    def futureSendOrder(self, req):
-        """发单"""
-        symbol = futureSymbolMapReverse[req.symbol[:3]]
-        expiry = futureContractMapReverse[req.symbol]
-        type_ = offsetMapReverse[(req.offset, req.direction)]
-        if req.price == 0:
-            req.match_price = 1
-        else:
-            req.match_price = 0
-
-        req.lever_rate = 20 # here hard code leverage 20 
-
-        self.futureTrade(symbol, expiry, str(type_), str(req.price), str(req.volume), str(req.match_price), str(req.lever_rate))
-        
-        # 本地委托号加1，并将对应字符串保存到队列中，返回基于本地委托号的vtOrderID
-        self.localNo += 1
-        self.localNoQueue.put(str(self.localNo))
-        vtOrderID = '.'.join([self.gatewayName, str(self.localNo)])
-
-        return vtOrderID
-
-    #----------------------------------------------------------------------
-    def onFutureCancelOrder(self, data):
-        """撤单回报"""
-        pass
-    
-    #----------------------------------------------------------------------
-    def futureCancel(self, req):
-        """撤单"""
-        symbol = futureSymbolMapReverse[req.symbol[:3]]
-        expiry = futureContractMapReverse[req.symbol]
-
-        localNo = req.orderID
-        if localNo in self.localNoDict:
-            orderID = self.localNoDict[localNo]
-            self.futureCancelOrder(symbol, expiry, orderID)
-        else:
-            # 如果在系统委托号返回前客户就发送了撤单请求，则保存
-            # 在cancelDict字典中，等待返回后执行撤单任务
-            self.cancelDict[localNo] = req
-    #-----------------------------------------------------------------------
-
-    #-----------------------------------------------------------------------
-
-    #-----------------------------------------------------------------------
-
     
 #----------------------------------------------------------------------
 def generateDateTime(s):

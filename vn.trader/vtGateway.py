@@ -270,6 +270,9 @@ class VtOrderData(VtBaseData):
         self.frontID = EMPTY_INT                # 前置机编号
         self.sessionID = EMPTY_INT              # 连接编号
 
+        # OKCOIN
+        self.expiry = EMPTY_STRING
+
     
 ########################################################################
 class VtPositionData(VtBaseData):
@@ -414,6 +417,10 @@ class VtOrderReq(object):
         self.optionType = EMPTY_UNICODE         # 期权类型     
         self.lastTradeDateOrContractMonth = EMPTY_STRING   # 合约月,IB专用
         self.multiplier = EMPTY_STRING                     # 乘数,IB专用
+
+        # OKCOIN
+        self.match_price = EMPTY_STRING
+        self.lever_rate = EMPTY_STRING
         
 
 ########################################################################
@@ -430,6 +437,11 @@ class VtCancelOrderReq(object):
         self.orderID = EMPTY_STRING             # 报单号
         self.frontID = EMPTY_STRING             # 前置机号
         self.sessionID = EMPTY_STRING           # 会话号
+
+        # OKCOIN
+        self.direction = EMPTY_STRING
+        self.offset = EMPTY_STRING
+        self.expiry = EMPTY_STRING
   
     
     

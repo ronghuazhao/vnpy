@@ -8,7 +8,9 @@
 在CTA_setting.json中写入具体每个策略对象的类和合约设置。
 '''
 
-from ctaDemo import DoubleEmaDemo
+#from ctaDemo import DoubleEmaDemo
+from ctaMa3Cross import Ma3Cross
 
 STRATEGY_CLASS = {}
-STRATEGY_CLASS['DoubleEmaDemo'] = DoubleEmaDemo
+#STRATEGY_CLASS['DoubleEmaDemo'] = DoubleEmaDemo
+STRATEGY_CLASS['Ma3Cross'] = Ma3Cross

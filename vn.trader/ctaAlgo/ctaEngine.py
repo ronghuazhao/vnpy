@@ -96,51 +96,65 @@ class CtaEngine(object):
         req.priceType = PRICETYPE_LIMITPRICE    
         
         # CTA委托类型映射
-        if orderType == CTAORDER_BUY:
-            req.direction = DIRECTION_LONG
-            req.offset = OFFSET_OPEN
-            
-        elif orderType == CTAORDER_SELL:
-            req.direction = DIRECTION_SHORT
-            
-            # 只有上期所才要考虑平今平昨
-            if contract.exchange != EXCHANGE_SHFE:
+        if req.symbol == "BTC_USD_QUARTER":
+            if orderType == CTAORDER_BUY:
+                req.direction = DIRECTION_LONG
+                req.offset = OFFSET_CLOSE_OPEN
+            elif orderType == CTAORDER_SELL:
+                req.direction = DIRECTION_LONG
                 req.offset = OFFSET_CLOSE
-            else:
-                # 获取持仓缓存数据
-                posBuffer = self.posBufferDict.get(vtSymbol, None)
-                # 如果获取持仓缓存失败，则默认平昨
-                if not posBuffer:
-                    req.offset = OFFSET_CLOSE
-                # 否则如果有多头今仓，则使用平今
-                elif posBuffer.longToday:
-                    req.offset= OFFSET_CLOSETODAY
-                # 其他情况使用平昨
-                else:
-                    req.offset = OFFSET_CLOSE
+            elif orderType == CTAORDER_SHORT:
+                req.direction = DIRECTION_SHORT
+                req.offset = OFFSET_CLOSE_OPEN
+            elif orderType == CTAORDER_COVER:
+                req.direction = DIRECTION_SHORT
+                req.offset = OFFSET_CLOSE
+        else:
+            if orderType == CTAORDER_BUY:
+                req.direction = DIRECTION_LONG
+                req.offset = OFFSET_OPEN
                 
-        elif orderType == CTAORDER_SHORT:
-            req.direction = DIRECTION_SHORT
-            req.offset = OFFSET_OPEN
-            
-        elif orderType == CTAORDER_COVER:
-            req.direction = DIRECTION_LONG
-            
-            # 只有上期所才要考虑平今平昨
-            if contract.exchange != EXCHANGE_SHFE:
-                req.offset = OFFSET_CLOSE
-            else:
-                # 获取持仓缓存数据
-                posBuffer = self.posBufferDict.get(vtSymbol, None)
-                # 如果获取持仓缓存失败，则默认平昨
-                if not posBuffer:
+            elif orderType == CTAORDER_SELL:
+                req.direction = DIRECTION_SHORT
+                
+                # 只有上期所才要考虑平今平昨
+                if contract.exchange != EXCHANGE_SHFE:
                     req.offset = OFFSET_CLOSE
-                # 否则如果有空头今仓，则使用平今
-                elif posBuffer.shortToday:
-                    req.offset= OFFSET_CLOSETODAY
-                # 其他情况使用平昨
                 else:
+                    # 获取持仓缓存数据
+                    posBuffer = self.posBufferDict.get(vtSymbol, None)
+                    # 如果获取持仓缓存失败，则默认平昨
+                    if not posBuffer:
+                        req.offset = OFFSET_CLOSE
+                    # 否则如果有多头今仓，则使用平今
+                    elif posBuffer.longToday:
+                        req.offset= OFFSET_CLOSETODAY
+                    # 其他情况使用平昨
+                    else:
+                        req.offset = OFFSET_CLOSE
+                    
+            elif orderType == CTAORDER_SHORT:
+                req.direction = DIRECTION_SHORT
+                req.offset = OFFSET_OPEN
+                
+            elif orderType == CTAORDER_COVER:
+                req.direction = DIRECTION_LONG
+                
+                # 只有上期所才要考虑平今平昨
+                if contract.exchange != EXCHANGE_SHFE:
                     req.offset = OFFSET_CLOSE
+                else:
+                    # 获取持仓缓存数据
+                    posBuffer = self.posBufferDict.get(vtSymbol, None)
+                    # 如果获取持仓缓存失败，则默认平昨
+                    if not posBuffer:
+                        req.offset = OFFSET_CLOSE
+                    # 否则如果有空头今仓，则使用平今
+                    elif posBuffer.shortToday:
+                        req.offset= OFFSET_CLOSETODAY
+                    # 其他情况使用平昨
+                    else:
+                        req.offset = OFFSET_CLOSE
         
         vtOrderID = self.mainEngine.sendOrder(req, contract.gatewayName)    # 发单
         self.orderStrategyDict[vtOrderID] = strategy        # 保存vtOrderID和策略的映射关系
@@ -184,18 +198,32 @@ class CtaEngine(object):
         so.stopOrderID = stopOrderID
         so.status = STOPORDER_WAITING
         
-        if orderType == CTAORDER_BUY:
-            so.direction = DIRECTION_LONG
-            so.offset = OFFSET_OPEN
-        elif orderType == CTAORDER_SELL:
-            so.direction = DIRECTION_SHORT
-            so.offset = OFFSET_CLOSE
-        elif orderType == CTAORDER_SHORT:
-            so.direction = DIRECTION_SHORT
-            so.offset = OFFSET_OPEN
-        elif orderType == CTAORDER_COVER:
-            so.direction = DIRECTION_LONG
-            so.offset = OFFSET_CLOSE           
+        if vtSymbol == "BTC_USD_QUARTER":
+            if orderType == CTAORDER_BUY:
+                so.direction = DIRECTION_LONG
+                so.offset = OFFSET_CLOSE_OPEN
+            elif orderType == CTAORDER_SELL:
+                so.direction = DIRECTION_LONG
+                so.offset = OFFSET_CLOSE
+            elif orderType == CTAORDER_SHORT:
+                so.direction = DIRECTION_SHORT
+                so.offset = OFFSET_CLOSE_OPEN
+            elif orderType == CTAORDER_COVER:
+                so.direction = DIRECTION_SHORT
+                so.offset = OFFSET_CLOSE
+        else:
+            if orderType == CTAORDER_BUY:
+                so.direction = DIRECTION_LONG
+                so.offset = OFFSET_OPEN
+            elif orderType == CTAORDER_SELL:
+                so.direction = DIRECTION_SHORT
+                so.offset = OFFSET_CLOSE
+            elif orderType == CTAORDER_SHORT:
+                so.direction = DIRECTION_SHORT
+                so.offset = OFFSET_OPEN
+            elif orderType == CTAORDER_COVER:
+                so.direction = DIRECTION_LONG
+                so.offset = OFFSET_CLOSE           
         
         # 保存stopOrder对象到字典中
         self.stopOrderDict[stopOrderID] = so
@@ -277,10 +305,20 @@ class CtaEngine(object):
             strategy = self.orderStrategyDict[trade.vtOrderID]
             
             # 计算策略持仓
-            if trade.direction == DIRECTION_LONG:
-                strategy.pos += trade.volume
+            if trade.vtSymbol[:3] == "BTC":
+                if trade.offset == OFFSET_OPEN and trade.direction == DIRECTION_LONG:
+                    strategy.pos += trade.volume
+                elif trade.offset == OFFSET_CLOSE and trade.direction == DIRECTION_LONG:
+                    strategy.pos -= trade.volume
+                elif trade.offset == OFFSET_OPEN and trade.direction == DIRECTION_SHORT:
+                    strategy.pos -= trade.volume
+                elif trade.offset == OFFSET_CLOSE and trade.direction = DIRECTION_SHORT:
+                    strategy.pos += trade.volume
             else:
-                strategy.pos -= trade.volume
+                if trade.direction == DIRECTION_LONG:
+                    strategy.pos += trade.volume
+                else:
+                    strategy.pos -= trade.volume
             
             self.callStrategyFunc(strategy, strategy.onTrade, trade)
             

@@ -14,6 +14,11 @@ sys.path.append('..')
 
 # 常量定义
 # CTA引擎中涉及到的交易方向类型
+OKCOINORDER_LONG_OPEN = u'开多'
+OKCOINORDER_LONG_CLOSE = u'平多'
+OKCOINORDER_SHORT_OPEN = u'开空'
+OKCOINORDER_SHORT_CLOSE = u'平空'
+
 CTAORDER_BUY = u'买开'
 CTAORDER_SELL = u'卖平'
 CTAORDER_SHORT = u'卖开'

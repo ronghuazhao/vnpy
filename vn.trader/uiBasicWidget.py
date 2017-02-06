@@ -568,6 +568,9 @@ class OrderMonitor(BasicMonitor):
         req.frontID = order.frontID
         req.sessionID = order.sessionID
         req.orderID = order.orderID
+        req.offset = order.offset
+        req.direction = order.direction
+        req.expiry = order.expiry
         self.mainEngine.cancelOrder(req, order.gatewayName)
 
 
@@ -1039,6 +1042,9 @@ class TradingWidget(QtGui.QFrame):
             req.frontID = order.frontID
             req.sessionID = order.sessionID
             req.orderID = order.orderID
+            req.offset = order.offset
+            req.direction = order.direction
+            req.expiry = order.expiry
             self.mainEngine.cancelOrder(req, order.gatewayName)
             
     #----------------------------------------------------------------------
